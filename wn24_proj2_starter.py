@@ -37,8 +37,9 @@ def retrieve_listings(html_file):
     div_lst = soup.find_all('div', class_='t1jojoys dir dir-ltr')
     for div in div_lst:
         home_id = div.get('id')
-        home_data = div.get('data-testid')
-        lst.append((home_data, home_id))
+        home_data = div.text.strip()
+        home_id = re.search(r'\d+', home_id)
+        lst.append((home_data, int(home_id.group())))
     print(lst)
     return lst
 
