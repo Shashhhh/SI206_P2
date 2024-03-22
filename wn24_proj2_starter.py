@@ -106,7 +106,7 @@ def listing_details(listing_id):
         avg_review = float(rev_str)
 
     else:
-        avg_review = 0
+        avg_review = 0.0
 
 
     return (policy, host, place_type, avg_review , price)
@@ -190,7 +190,7 @@ def find_invalid_policy_numbers(data):
     lst = []
     for tup in data:
         if re.search(r'20\d{2}-\d{6}STR|STR-\d{7}', tup[2]) is None and tup[2] != "Pending" and tup[2] != "Exempt":
-            lst.append(tup)
+            lst.append((tup[1], tup[3], tup[2]))
     return lst
 
 
@@ -329,10 +329,11 @@ class TestCases(unittest.TestCase):
         self.assertEqual(len(csv_lines), 19)
 
         # check that the header row is correct
-
+        self.assertEqual(csv_lines[0], ['Listing Title', 'Listing ID', 'Policy Number', 'Host Names(s)', 'Place Type', 'Average Review Score', 'Nightly Rate'])
         # check that the next row is Apartment in Noe Valley,824047084487341932,2022-008652STR,Eileen,Entire Room,0.0,176
-
+        self.assertEqual(csv_lines[1], ('Apartment in Noe Valley','824047084487341932','2022-008652STR','Eileen','Entire Room','0.0','176'))
         # check that the last row is Guest suite in Mission District,755957132088408739,STR-0000315,HostWell,Entire Room,5.0,125
+        self.assertEqual(csv_lines[-1], ('Guest suite in Mission District','755957132088408739','STR-0000315','HostWell','Entire Room','5.0','125'))
 
     def test_find_invalid_policy_numbers(self):
         # call make_listing_database on "html_files/search_results.html"
@@ -344,9 +345,14 @@ class TestCases(unittest.TestCase):
 
         # check that the return value is a list
         self.assertEqual(type(invalid_listings), list)
-
+        for tup in invalid_listings:
+            self.assertEqual(type(tup), tuple)
+            self.assertEqual(len(tup), 3)
+            
         # check that the elements in the list are tuples
+
         # and that there are exactly three element in each tuple
+
 
 def main (): 
     detailed_data = make_listing_database("html_files/search_results.html")
