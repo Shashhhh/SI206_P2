@@ -345,12 +345,11 @@ class TestCases(unittest.TestCase):
 
         # check that the return value is a list
         self.assertEqual(type(invalid_listings), list)
+
         for tup in invalid_listings:
             self.assertEqual(type(tup), tuple)
             self.assertEqual(len(tup), 3)
-            
         # check that the elements in the list are tuples
-
         # and that there are exactly three element in each tuple
 
 
