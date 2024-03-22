@@ -3,6 +3,7 @@ import re
 import os
 import csv
 import unittest
+import requests
 
 # IMPORTANT NOTE:
 """
@@ -14,6 +15,17 @@ An example of that within the function would be:
 
 There are a few special characters present from Airbnb that aren't defined in standard UTF-8 (which is what Python runs by default). This is beyond the scope of what you have learned so far in this class, so we have provided this for you just in case it happens to you. Good luck!
 """
+def extract_host(div_text):
+    return re.search(r'(\w+$)|\w+\sAnd\s\w+$', div_text).group()
+def extract_place_type(div_text):
+    text = div_text.lower()
+    if text.find("shared") == -1:
+        if text.find("private") == -1:
+            return "Entire Room"
+        else:
+            return "Private Room"
+    else:
+        return "Shared Room"
 
 def retrieve_listings(html_file): 
     """
@@ -39,16 +51,9 @@ def retrieve_listings(html_file):
         home_id = div.get('id')
         home_data = div.text.strip()
         home_id = re.search(r'\d+', home_id)
-        lst.append((home_data, int(home_id.group())))
-    print(lst)
+        lst.append((home_data, home_id.group()))
     return lst
 
-
-
-
-    #<div class="t1jojoys dir dir-ltr" id="title_1944564" data-testid="listing-card-title">Loft in Mission District</div>
-
-    #<div class="t1jojoys dir dir-ltr" id="title_49043049" data-testid="listing-card-title">Home in Mission District</div>
 
 def listing_details(listing_id): 
     """
@@ -77,9 +82,39 @@ def listing_details(listing_id):
 
     Example output: 
         ('2022-004088STR', 'Brian', 'Entire Room', 4.98, 181)
-
     """
-    pass
+    html_file  = f"html_files/listing_{listing_id}.html"
+    with open(html_file, 'r') as file:
+        html_content = file.read()
+    soup = bs(html_content, 'html.parser')
+    host_div = soup.find('div', class_='tehcqxo dir dir-ltr')
+    host_div = host_div.find('h2')
+    host = extract_host(host_div.text) # host name
+    place_type_div = soup.find('h2', class_='_14i3z6h')
+    place_type = extract_place_type(place_type_div.text) #place type
+    policy_ul = soup.find('ul', class_='fhhmddr dir dir-ltr')
+    policy = policy_ul.find('li').find('span', class_= 'll4r2nl dir dir-ltr').text
+    policy = re.search(r'(STR-\d+\w+)|(pending)|(\d+-\d+STR)|(exempt)|(\d+)', policy).group()
+    if policy == 'pending' or policy == 'exempt':
+       policy=  policy.capitalize()
+    price = soup.find('span' , class_= '_tyxjp1').text
+    price = int(re.search(r'(\d)+' , price).group())
+
+    if soup.find('span', class_='_12si43g') is not None:
+        rev_span = soup.find('span', class_='_12si43g').string
+        rev_str = re.search(r'\d\.\d{0,2}', rev_span).group()
+        avg_review = float(rev_str)
+
+    else:
+        avg_review = 0
+
+
+    return (policy, host, place_type, avg_review , price)
+
+
+
+
+
 
 def make_listing_database(html_file): 
     """
@@ -100,7 +135,13 @@ def make_listing_database(html_file):
     Example output: 
         [('Loft in Mission District', '1944564', '2022-004088STR', 'Brian', 'Entire Room', 4.98, 181), ('Home in Mission District', '49043049', 'Cherry', 'Pending', 'Entire Room', 4.93, 147), ...]    
     """
-    pass
+    lst = []
+    listing_tup = retrieve_listings(html_file)
+    for tup in listing_tup:
+        id = tup[1]
+        lst.append(tup + (listing_details(id)))
+    return lst
+
 
 
 def write_csv(data, filename): 
@@ -119,7 +160,15 @@ def write_csv(data, filename):
 
 
     """
-    pass
+    sorted_data = sorted(data, key=lambda x: x[5])
+    
+    headers = ["Listing Title", "Listing ID", "Policy Number", "Host Name(s)", "Place Type", "Average Review Score", "Nightly Rate"]
+    
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(headers)
+        writer.writerows(sorted_data)
+
 
 def find_invalid_policy_numbers(data):
     """
@@ -138,21 +187,23 @@ def find_invalid_policy_numbers(data):
     [('1944564', 'Brian', '2022-004088STR'), ...]
 
     """
-    pass 
+    lst = []
+    for tup in data:
+        if re.search(r'20\d{2}-\d{6}STR|STR-\d{7}', tup[2]) is None and tup[2] != "Pending" and tup[2] != "Exempt":
+            lst.append(tup)
+    return lst
+
+
 
 # EXTRA CREDIT 
 def goodreads_searcher(query): 
     """
     goodreads_searcher(query) -> list
-
     TODO Write a function that imports requests library of Python
     and sends a request to good reads with the passed query.
-    
     Using BeautifulSoup, find all titles and return the list of titles you see on page 1. 
     (that means, you do not need to scrape results on other pages)
-
     You do not need to write test cases for this question.
-
     Example output using 'airbnb' as query: 
         ['The Upstarts: How Uber, Airbnb, and the Killer Companies of the New Silicon Valley Are Changing the World', 
         'The Airbnb Story: How Three Ordinary Guys Disrupted an Industry, Made Billions . . . and Created Plenty of Controversy', 
@@ -165,18 +216,21 @@ def goodreads_searcher(query):
         'How To Invest in Airbnb Properties: Create Wealth and Passive Income Through Smart Vacation Rentals Investing', 
         'Airbnb Listing Hacks - The Complete Guide To Maximizing Your Bookings And Profits', 
         'Work From Home: 50 Ways to Make Money Online Analyzed']
-
-
-
     * see PDF instructions for more details
     """
-    pass
+    response = requests.get(query)
+    soup = bs.find(response, 'html.parser')
+    table = soup.find('tr', itemtype='http://schema.org/Book')
+    table.find_all()
+
 
 # TODO: Don't forget to write your test cases! 
 class TestCases(unittest.TestCase):
     def setUp(self):
         self.listings = retrieve_listings("html_files/search_results.html")
-        print(self.listing)
+        self.listing_1944564 = listing_details(1944564)
+        self.listing_database = make_listing_database("html_files/search_results.html")
+        self.goodread = goodreads_searcher('airbnb')
 
     def test_retrieve_listings(self):
         # call retrieve_listings("html_files/search_results.html")
