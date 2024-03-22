@@ -329,11 +329,11 @@ class TestCases(unittest.TestCase):
         self.assertEqual(len(csv_lines), 19)
 
         # check that the header row is correct
-        self.assertEqual(csv_lines[0], ['Listing Title', 'Listing ID', 'Policy Number', 'Host Names(s)', 'Place Type', 'Average Review Score', 'Nightly Rate'])
+        self.assertEqual(csv_lines[0], ['Listing Title', 'Listing ID', 'Policy Number', 'Host Name(s)', 'Place Type', 'Average Review Score', 'Nightly Rate'])
         # check that the next row is Apartment in Noe Valley,824047084487341932,2022-008652STR,Eileen,Entire Room,0.0,176
-        self.assertEqual(csv_lines[1], ('Apartment in Noe Valley','824047084487341932','2022-008652STR','Eileen','Entire Room','0.0','176'))
+        self.assertEqual(csv_lines[1], ['Apartment in Noe Valley','824047084487341932','2022-008652STR','Eileen','Entire Room','0.0','176'])
         # check that the last row is Guest suite in Mission District,755957132088408739,STR-0000315,HostWell,Entire Room,5.0,125
-        self.assertEqual(csv_lines[-1], ('Guest suite in Mission District','755957132088408739','STR-0000315','HostWell','Entire Room','5.0','125'))
+        self.assertEqual(csv_lines[-1], ['Guest suite in Mission District','755957132088408739','STR-0000315','HostWell','Entire Room','5.0','125'])
 
     def test_find_invalid_policy_numbers(self):
         # call make_listing_database on "html_files/search_results.html"
