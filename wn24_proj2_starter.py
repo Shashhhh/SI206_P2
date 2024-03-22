@@ -218,10 +218,16 @@ def goodreads_searcher(query):
         'Work From Home: 50 Ways to Make Money Online Analyzed']
     * see PDF instructions for more details
     """
-    response = requests.get(query)
-    soup = bs.find(response, 'html.parser')
-    table = soup.find('tr', itemtype='http://schema.org/Book')
-    table.find_all()
+    lst = []
+    response = requests.get(f'https://www.goodreads.com/search?q={query}&qid=')
+    soup = bs(response.text, 'html.parser')
+    table = soup.find('table', class_='tableList')
+    if table:
+        tablerows = table.find_all('tr', {'itemtype': 'http://schema.org/Book'})
+        for row in tablerows:
+            lst.append(row.find('span', {'itemprop': 'name'}).text)
+    return lst
+
 
 
 # TODO: Don't forget to write your test cases! 
